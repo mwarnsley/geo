@@ -1,5 +1,7 @@
 import React, { useContext, useState } from 'react';
+import { GraphQLClient } from 'graphql-request';
 import { withStyles } from '@material-ui/core/styles';
+import axios from 'axios';
 import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 import Button from '@material-ui/core/Button';
@@ -9,13 +11,16 @@ import ClearIcon from '@material-ui/icons/Clear';
 import SaveIcon from '@material-ui/icons/SaveTwoTone';
 
 import Context from '../../context';
+
+import { CREATE_PIN_MUTATION } from '../../graphql/mutations';
 import { DELETE_DRAFT } from '../../constants';
 
 const CreatePin = ({ classes }) => {
-    const { dispatch } = useContext(Context);
+    const { dispatch, state } = useContext(Context);
     const [title, setTitle] = useState('');
     const [image, setImage] = useState('');
     const [content, setContent] = useState('');
+    const [submitting, setSubmitting] = useState(false);
 
     // Function that handles deleting the draft
     const handleDeleteDraft = () => {
@@ -25,10 +30,55 @@ const CreatePin = ({ classes }) => {
         dispatch({ type: DELETE_DRAFT });
     };
 
+    // Function that handles the upload for the image
+    const handleImageUpload = async () => {
+        const data = new FormData();
+        data.append('file', image);
+        data.append('upload_preset', 'sid5atfw');
+        data.append('cloud_name', 'marcuscloud');
+        const res = await axios.post(
+            'https://api.cloudinary.com/v1_1/marcuscloud/image/upload',
+            data
+        );
+
+        return res.data.url;
+    };
+
     // Function that handles adding in the draft
-    const handleSubmit = event => {
-        event.preventDefault();
-        console.log(title, image, content);
+    const handleSubmit = async event => {
+        try {
+            event.preventDefault();
+            setSubmitting(true);
+            const idToken = window.gapi.auth2
+                .getAuthInstance()
+                .currentUser.get()
+                .getAuthResponse().id_token;
+            const client = new GraphQLClient('http://localhost:4000/graphql', {
+                headers: {
+                    authorization: idToken
+                }
+            });
+            const url = await handleImageUpload();
+            const { latitude, longitude } = state.draft;
+
+            const variables = {
+                title,
+                image: url,
+                content,
+                latitude,
+                longitude
+            };
+            const { createPin } = await client.request(
+                CREATE_PIN_MUTATION,
+                variables
+            );
+
+            console.log('Pin Created: ', createPin);
+            handleDeleteDraft();
+        } catch (error) {
+            setSubmitting(false);
+            console.error('Error creating the pin: ', error);
+        }
     };
     return (
         <form className={classes.form}>
@@ -89,7 +139,9 @@ const CreatePin = ({ classes }) => {
                 <Button
                     className={classes.button}
                     color="secondary"
-                    disabled={!title.trim() || !content.trim() || !image}
+                    disabled={
+                        !title.trim() || !content.trim() || !image || submitting
+                    }
                     onClick={handleSubmit}
                     type="submit"
                     variant="contained"
