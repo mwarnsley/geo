@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext, useState } from 'react';
 import { withStyles } from '@material-ui/core/styles';
 import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
@@ -8,7 +8,28 @@ import LandscapeIcon from '@material-ui/icons/LandscapeOutlined';
 import ClearIcon from '@material-ui/icons/Clear';
 import SaveIcon from '@material-ui/icons/SaveTwoTone';
 
+import Context from '../../context';
+import { DELETE_DRAFT } from '../../constants';
+
 const CreatePin = ({ classes }) => {
+    const { dispatch } = useContext(Context);
+    const [title, setTitle] = useState('');
+    const [image, setImage] = useState('');
+    const [content, setContent] = useState('');
+
+    // Function that handles deleting the draft
+    const handleDeleteDraft = () => {
+        setTitle('');
+        setImage('');
+        setContent('');
+        dispatch({ type: DELETE_DRAFT });
+    };
+
+    // Function that handles adding in the draft
+    const handleSubmit = event => {
+        event.preventDefault();
+        console.log(title, image, content);
+    };
     return (
         <form className={classes.form}>
             <Typography
@@ -24,11 +45,13 @@ const CreatePin = ({ classes }) => {
                     label="Title"
                     name="title"
                     placeholder="Insert pin title"
+                    onChange={e => setTitle(e.target.value)}
                 />
                 <input
                     accept="image/*"
                     className={classes.input}
                     id="image"
+                    onChange={e => setImage(e.target.files[0])}
                     type="file"
                 />
                 <label htmlFor="image">
@@ -36,6 +59,7 @@ const CreatePin = ({ classes }) => {
                         className={classes.button}
                         component="span"
                         size="small"
+                        style={{ color: image && 'green' }}
                     >
                         <AddAPhotoIcon />
                     </Button>
@@ -48,6 +72,7 @@ const CreatePin = ({ classes }) => {
                     name="content"
                     margin="normal"
                     multiline
+                    onChange={e => setContent(e.target.value)}
                     rows="6"
                     variant="outlined"
                 />
@@ -56,6 +81,7 @@ const CreatePin = ({ classes }) => {
                 <Button
                     className={classes.button}
                     color="primary"
+                    onClick={handleDeleteDraft}
                     variant="contained"
                 >
                     <ClearIcon className={classes.leftIcon} /> Discard
@@ -63,6 +89,8 @@ const CreatePin = ({ classes }) => {
                 <Button
                     className={classes.button}
                     color="secondary"
+                    disabled={!title.trim() || !content.trim() || !image}
+                    onClick={handleSubmit}
                     type="submit"
                     variant="contained"
                 >
