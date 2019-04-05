@@ -46,6 +46,7 @@ const Login = ({ classes }) => {
      */
     const onFailure = error => {
         console.error('Error Logging In: ', error);
+        dispatch({ type: IS_LOGGED_IN, payload: false });
     };
     return (
         <div className={classes.root}>
