@@ -8,7 +8,9 @@ import Blog from './Blog';
 // import Typography from "@material-ui/core/Typography";
 // import DeleteIcon from "@material-ui/icons/DeleteTwoTone";
 
-import { CREATE_DRAFT, UPDATE_DRAFT_LOCATION } from '../constants';
+import { useClient } from '../client';
+import { CREATE_DRAFT, GET_PINS, UPDATE_DRAFT_LOCATION } from '../constants';
+import { GET_PINS_QUERY } from '../graphql/queries';
 
 // Setting the initial viewport of the map
 const INITIAL_VIEWPORT = {
@@ -18,6 +20,7 @@ const INITIAL_VIEWPORT = {
 };
 
 const Map = ({ classes }) => {
+    const client = useClient();
     const { state, dispatch } = useContext(Context);
     // using the state from the initial viewport to pass into react map gl
     const [viewport, setViewport] = useState(INITIAL_VIEWPORT);
@@ -26,6 +29,10 @@ const Map = ({ classes }) => {
 
     useEffect(() => {
         getUserPosition();
+    }, []);
+
+    useEffect(() => {
+        getPins();
     }, []);
 
     // Function for getting the user position when the component is mounted
@@ -39,6 +46,12 @@ const Map = ({ classes }) => {
                 setUserPosition({ latitude, longitude });
             });
         }
+    };
+
+    // Function to get the pins
+    const getPins = async () => {
+        const { getPins } = await client.request(GET_PINS_QUERY);
+        dispatch({ type: GET_PINS, payload: getPins });
     };
 
     // Function that handles the map click
@@ -91,6 +104,17 @@ const Map = ({ classes }) => {
                         <PinIcon color="hotpink" size={40} />
                     </Marker>
                 )}
+                {state.pins.map(pin => (
+                    <Marker
+                        key={pin._id}
+                        latitude={pin.latitude}
+                        longitude={pin.longitude}
+                        offsetLeft={-19}
+                        offsetTop={-37}
+                    >
+                        <PinIcon color="darkblue" size={40} />
+                    </Marker>
+                ))}
             </ReactMapGL>
             <Blog />
         </div>

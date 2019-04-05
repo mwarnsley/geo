@@ -9,3 +9,33 @@ export const ME_QUERY = `
     }
   }
 `;
+
+// Query to get all of the pins created
+export const GET_PINS_QUERY = `
+  {
+    getPins {
+      _id
+      createdAt
+      title
+      image
+      content
+      latitude
+      longitude
+      author {
+        _id
+        name
+        email
+        picture
+      }
+      comments {
+        text
+        createdAt
+        author {
+          _id
+          name
+          picture
+        }
+      }
+    }
+  }
+`;

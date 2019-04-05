@@ -8,6 +8,7 @@ import Context from '../../context';
 
 import { ME_QUERY } from '../../graphql/queries';
 import { IS_LOGGED_IN, LOGIN_USER } from '../../constants';
+import { BASE_URL } from '../../client';
 
 const Login = ({ classes }) => {
     // Getting the dispatch from the useContext by passing in the context state
@@ -22,7 +23,7 @@ const Login = ({ classes }) => {
             // Using the getAuthResponse method to get the id token of the google login user
             const idToken = googleUser.getAuthResponse().id_token;
             // Creating a new graphql client passing in the request url and the object options with the authorization headers
-            const client = new GraphQLClient('http://localhost:4000/graphql', {
+            const client = new GraphQLClient(BASE_URL, {
                 headers: {
                     authorization: idToken
                 }
