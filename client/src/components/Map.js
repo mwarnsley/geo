@@ -4,6 +4,7 @@ import { withStyles } from '@material-ui/core/styles';
 import PinIcon from './PinIcon';
 import Context from '../context';
 import Blog from './Blog';
+import differenceInMinutes from 'date-fns/difference_in_minutes';
 // import Button from "@material-ui/core/Button";
 // import Typography from "@material-ui/core/Typography";
 // import DeleteIcon from "@material-ui/icons/DeleteTwoTone";
@@ -66,6 +67,16 @@ const Map = ({ classes }) => {
             payload: { longitude, latitude }
         });
     };
+
+    /**
+     * Function to get the new pin color
+     * @param { Object } pin representing the pin being highlighted
+     */
+    const highlightNewPin = pin => {
+        const isNewPin =
+            differenceInMinutes(Date.now(), Number(pin.createdAt)) <= 30;
+        return isNewPin ? 'limegreen' : 'darkblue';
+    };
     return (
         <div className={classes.root}>
             <ReactMapGL
@@ -112,7 +123,7 @@ const Map = ({ classes }) => {
                         offsetLeft={-19}
                         offsetTop={-37}
                     >
-                        <PinIcon color="darkblue" size={40} />
+                        <PinIcon color={highlightNewPin(pin)} size={40} />
                     </Marker>
                 ))}
             </ReactMapGL>
