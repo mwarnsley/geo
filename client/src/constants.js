@@ -1,3 +1,4 @@
+export const CREATE_COMMENT = 'CREATE_COMMENT';
 export const CREATE_DRAFT = 'CREATE_DRAFT';
 export const CREATE_PIN = 'CREATE_PIN';
 export const DELETE_DRAFT = 'DELETE_DRAFT';

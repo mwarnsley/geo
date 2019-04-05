@@ -27,6 +27,21 @@ module.exports = {
         }
     },
     Mutation: {
+        createComment: authenticated(async (root, args, context) => {
+            const newComment = {
+                author: context.currentUser._id,
+                text: args.text
+            };
+            const pinUpdated = await Pin.findOneAndUpdate(
+                { _id: args.pinId },
+                { $push: { comments: newComment } },
+                { new: true }
+            )
+                .populate('author')
+                .populate('comments.author');
+
+            return pinUpdated;
+        }),
         createPin: authenticated(async (root, args, context) => {
             const newPin = await new Pin({
                 ...args.input,
