@@ -1,17 +1,24 @@
 import React, { useContext, useEffect, useState } from 'react';
-import ReactMapGL, { Marker, NavigationControl } from 'react-map-gl';
+import ReactMapGL, { Marker, NavigationControl, Popup } from 'react-map-gl';
 import { withStyles } from '@material-ui/core/styles';
 import PinIcon from './PinIcon';
 import Context from '../context';
 import Blog from './Blog';
 import differenceInMinutes from 'date-fns/difference_in_minutes';
-// import Button from "@material-ui/core/Button";
-// import Typography from "@material-ui/core/Typography";
-// import DeleteIcon from "@material-ui/icons/DeleteTwoTone";
+import Button from '@material-ui/core/Button';
+import Typography from '@material-ui/core/Typography';
+import DeleteIcon from '@material-ui/icons/DeleteTwoTone';
 
 import { useClient } from '../client';
-import { CREATE_DRAFT, GET_PINS, UPDATE_DRAFT_LOCATION } from '../constants';
+import {
+    CREATE_DRAFT,
+    DELETE_PIN,
+    GET_PINS,
+    SET_PIN,
+    UPDATE_DRAFT_LOCATION
+} from '../constants';
 import { GET_PINS_QUERY } from '../graphql/queries';
+import { DELETE_PIN_MUTATION } from '../graphql/mutations';
 
 // Setting the initial viewport of the map
 const INITIAL_VIEWPORT = {
@@ -35,6 +42,8 @@ const Map = ({ classes }) => {
     useEffect(() => {
         getPins();
     }, []);
+
+    const [popup, setPopup] = useState(null);
 
     // Function for getting the user position when the component is mounted
     const getUserPosition = () => {
@@ -77,6 +86,33 @@ const Map = ({ classes }) => {
             differenceInMinutes(Date.now(), Number(pin.createdAt)) <= 30;
         return isNewPin ? 'limegreen' : 'darkblue';
     };
+
+    /**
+     * Function that handles the click from the pin
+     * @param { Object } pin representing the pin being highlighted
+     */
+    const handleSelectPin = pin => {
+        setPopup(pin);
+        dispatch({ type: SET_PIN, payload: pin });
+    };
+
+    // Checking to see if the current popup is the authorized users popup
+    const isAuthUser = () => state.currentUser._id === popup.author._id;
+
+    /**
+     * Function that handles deleting the pin
+     * @param { Object } pin representing the pin being deleted
+     */
+    const handleDeletePin = async pin => {
+        const variables = { pinId: pin._id };
+        const { deletePin } = await client.request(
+            DELETE_PIN_MUTATION,
+            variables
+        );
+        dispatch({ type: DELETE_PIN, payload: deletePin });
+        setPopup(null);
+    };
+
     return (
         <div className={classes.root}>
             <ReactMapGL
@@ -123,9 +159,41 @@ const Map = ({ classes }) => {
                         offsetLeft={-19}
                         offsetTop={-37}
                     >
-                        <PinIcon color={highlightNewPin(pin)} size={40} />
+                        <PinIcon
+                            color={highlightNewPin(pin)}
+                            onClick={() => handleSelectPin(pin)}
+                            size={40}
+                        />
                     </Marker>
                 ))}
+                {popup && (
+                    <Popup
+                        anchor="top"
+                        closeOnClick={false}
+                        latitude={popup.latitude}
+                        longitude={popup.longitude}
+                        onClose={() => setPopup(null)}
+                    >
+                        <img
+                            alt={popup.title}
+                            className={classes.popupImage}
+                            src={popup.image}
+                        />
+                        <div className={classes.popupTab}>
+                            <Typography>
+                                {popup.latitude.toFixed(6)},{' '}
+                                {popup.longitude.toFixed(6)}
+                            </Typography>
+                            {isAuthUser() && (
+                                <Button onClick={() => handleDeletePin(popup)}>
+                                    <DeleteIcon
+                                        className={classes.deleteIcon}
+                                    />
+                                </Button>
+                            )}
+                        </div>
+                    </Popup>
+                )}
             </ReactMapGL>
             <Blog />
         </div>
